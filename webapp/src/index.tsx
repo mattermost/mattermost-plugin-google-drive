@@ -11,7 +11,7 @@ import {sendEphemeralPost} from './actions';
 export default class Plugin {
     public async initialize(
         registry: PluginRegistry,
-        store: Store<GlobalState, Action<Record<string, unknown>>>,
+        store: Store<GlobalState, Action>,
     ) {
         const getFilesForPost = makeGetFilesForPost();
 
