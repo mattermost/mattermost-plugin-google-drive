@@ -8,6 +8,13 @@ import {PluginRegistry} from '@/types/mattermost-webapp';
 
 import {sendEphemeralPost} from './actions';
 
+// Mattermost keys open interactive dialogs by trigger_id and discards any dialog
+// without one. Dialogs opened from the web app never round-trip the server, so
+// there is no server-minted id available here.
+function newTriggerID(): string {
+    return `${manifest.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default class Plugin {
     public async initialize(
         registry: PluginRegistry,
@@ -27,6 +34,7 @@ export default class Plugin {
                     return;
                 }
                 const modal = {
+                    trigger_id: newTriggerID(),
                     url: `/plugins/${manifest.id}/api/v1/upload_file`,
                     dialog: {
                         callback_id: 'upload_file',
@@ -77,6 +85,7 @@ export default class Plugin {
                     return;
                 }
                 const modal = {
+                    trigger_id: newTriggerID(),
                     url: `/plugins/${manifest.id}/api/v1/upload_all`,
                     dialog: {
                         callback_id: 'upload_all_files',
