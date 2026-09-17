@@ -89,7 +89,9 @@ export default class Plugin {
                     url: `/plugins/${manifest.id}/api/v1/upload_all`,
                     dialog: {
                         callback_id: 'upload_all_files',
-                        title: 'Upload all files Google Drive',
+                        title: 'Upload all files to Google Drive',
+                        introduction_text: 'All files attached to this message will be uploaded to your Google Drive.',
+                        elements: [],
                         submit_label: 'Submit',
                         notify_on_cancel: true,
                         state: postID,
