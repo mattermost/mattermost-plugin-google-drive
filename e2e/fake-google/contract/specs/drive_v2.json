@@ -1,0 +1,38 @@
+{
+  "api": "drive",
+  "version": "v2",
+  "methods": {
+    "drive.about.get": {
+      "httpMethod": "GET",
+      "path": "/drive/v2/about",
+      "parameters": {
+        "includeSubscribed": {
+          "type": "boolean",
+          "location": "query"
+        },
+        "maxChangeIdCount": {
+          "type": "string",
+          "location": "query",
+          "format": "int64"
+        },
+        "startChangeId": {
+          "type": "string",
+          "location": "query",
+          "format": "int64"
+        }
+      },
+      "response": "About"
+    }
+  },
+  "schemas": {
+    "About": {
+      "type": "object",
+      "properties": {
+        "domainSharingPolicy": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

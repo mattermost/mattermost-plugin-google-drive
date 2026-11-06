@@ -1,0 +1,108 @@
+{
+  "api": "sheets",
+  "version": "v4",
+  "methods": {
+    "sheets.spreadsheets.create": {
+      "httpMethod": "POST",
+      "path": "/v4/spreadsheets",
+      "parameters": {},
+      "request": "Spreadsheet",
+      "response": "Spreadsheet"
+    }
+  },
+  "schemas": {
+    "GridProperties": {
+      "type": "object",
+      "properties": {
+        "columnCount": {
+          "type": "integer"
+        },
+        "rowCount": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Sheet": {
+      "type": "object",
+      "properties": {
+        "properties": {
+          "$ref": "SheetProperties"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SheetProperties": {
+      "type": "object",
+      "properties": {
+        "gridProperties": {
+          "$ref": "GridProperties"
+        },
+        "index": {
+          "type": "integer"
+        },
+        "sheetId": {
+          "type": "integer"
+        },
+        "sheetType": {
+          "type": "string",
+          "enum": [
+            "SHEET_TYPE_UNSPECIFIED",
+            "GRID",
+            "OBJECT",
+            "DATA_SOURCE"
+          ]
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Spreadsheet": {
+      "type": "object",
+      "properties": {
+        "properties": {
+          "$ref": "SpreadsheetProperties"
+        },
+        "sheets": {
+          "type": "array",
+          "items": {
+            "$ref": "Sheet"
+          }
+        },
+        "spreadsheetId": {
+          "type": "string"
+        },
+        "spreadsheetUrl": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpreadsheetProperties": {
+      "type": "object",
+      "properties": {
+        "autoRecalc": {
+          "type": "string",
+          "enum": [
+            "RECALCULATION_INTERVAL_UNSPECIFIED",
+            "ON_CHANGE",
+            "MINUTE",
+            "HOUR"
+          ]
+        },
+        "locale": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

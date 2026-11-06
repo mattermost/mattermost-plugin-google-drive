@@ -1,0 +1,132 @@
+# Disposable Mattermost, Postgres and fake Google for the plugin's e2e suite.
+#   npm run server:up       # fake Google lane (default): start and wait until healthy
+#   npm run server:up:real  # real Google lane: same stack without the fake
+#   npm run server:down     # stop and wipe all data
+#
+# Mattermost sends its outbound HTTPS through the fake's proxy (HTTPS_PROXY), which tunnels Google's
+# real hostnames to the fake, over TLS with a throwaway CA that Go trusts through SSL_CERT_FILE (a
+# bundle of the system roots plus that CA, so the same server works against real Google when the
+# proxy is off). A Google host the fake does not answer for is refused as a contract violation
+# instead of reaching real Google. No plugin code changes are needed. The tests reach the fake's
+# control API on http://127.0.0.1:${FAKE_GOOGLE_PORT}. Adapted from
+# mattermost-plugin-mscalendar e2e/playwright/docker-compose.yml (which uses network aliases).
+#
+# Ports, the image and the fake's fixed created time are variables so script/visual.sh can run a
+# second project (gdrive-plugin-e2e-visual) next to this one.
+name: gdrive-plugin-e2e
+
+# Google hosts the plugin's Go clients call (google.golang.org/api basePath, x/oauth2
+# google.Endpoint). The certificate covers them and the fake's proxy routes them to the fake.
+x-fake-google-hosts: &fake-google-hosts >-
+  www.googleapis.com docs.googleapis.com sheets.googleapis.com slides.googleapis.com
+  driveactivity.googleapis.com oauth2.googleapis.com
+
+services:
+  certs:
+    image: alpine:3.20
+    command: sh -c "apk add --no-cache openssl ca-certificates >/dev/null && sh /gen-certs.sh"
+    volumes:
+      - certs:/certs
+      - ./fake-google/gen-certs.sh:/gen-certs.sh:ro
+    environment:
+      FAKE_GOOGLE_HOSTS: *fake-google-hosts
+
+  fake-google:
+    # Only with the `fake` profile (npm run server:up). The real lane (npm run server:up:real)
+    # clears Mattermost's HTTPS_PROXY, so it talks to real Google.
+    profiles: [fake]
+    image: node:24-alpine
+    working_dir: /app
+    command: node server.ts
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${FAKE_GOOGLE_PORT:-8080}:8080"
+    volumes:
+      - ./fake-google:/app:ro
+      - certs:/certs:ro
+    environment:
+      FAKE_SITE_URL: http://localhost:${MM_PORT:-8065}
+      FAKE_MATTERMOST_URL: http://mattermost:${MM_PORT:-8065}
+      # Set by script/visual.sh: the created-file post prints this time.
+      FAKE_FIXED_CREATED_TIME: ${FAKE_FIXED_CREATED_TIME:-}
+      FAKE_GOOGLE_HOSTS: *fake-google-hosts
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/__control/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: mmuser
+      POSTGRES_PASSWORD: mostest
+      POSTGRES_DB: mattermost_test
+    # The tests seed plugin KV rows straight into the database (lib/kv.ts). Not 5432, which a
+    # mattermost-server dev setup usually holds.
+    ports:
+      - "127.0.0.1:${E2E_DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mmuser -d mattermost_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mattermost:
+    # Must satisfy plugin.json's min_server_version. Only amd64 images are published; on Apple
+    # silicon use Docker Desktop's Rosetta emulation (QEMU crashes the server at random).
+    image: ${MM_IMAGE:-mattermostdevelopment/mattermost-enterprise-edition:release-12.0}
+    platform: linux/amd64
+    depends_on:
+      postgres:
+        condition: service_healthy
+      certs:
+        condition: service_completed_successfully
+      # Started first so its proxy is up from the first request. Not required, so the real lane
+      # can start without it.
+      fake-google:
+        condition: service_healthy
+        required: false
+    # Fixed, identical host and container port: SiteURL http://localhost:<port> must reach the
+    # server from the browser and from inside the container (the plugin's comment-reply action
+    # posts back to an absolute SiteURL).
+    ports:
+      - "127.0.0.1:${MM_PORT:-8065}:${MM_PORT:-8065}"
+    volumes:
+      - certs:/certs:ro
+    environment:
+      MM_SERVICESETTINGS_LISTENADDRESS: :${MM_PORT:-8065}
+      MM_SERVICESETTINGS_SITEURL: http://localhost:${MM_PORT:-8065}
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://mmuser:mostest@postgres:5432/mattermost_test?sslmode=disable&connect_timeout=10
+      MM_SERVICESETTINGS_ENABLETESTING: "true"
+      MM_SERVICESETTINGS_ENABLEDEVELOPER: "true"
+      MM_SERVICESETTINGS_ENABLEONBOARDINGFLOW: "false"
+      MM_SERVICESETTINGS_ENABLESECURITYFIXALERT: "false"
+      # The plugin's comment-reply action makes the server POST to its own SiteURL.
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: localhost 127.0.0.1
+      MM_PLUGINSETTINGS_ENABLEUPLOADS: "true"
+      MM_PLUGINSETTINGS_AUTOMATICPREPACKAGEDPLUGINS: "false"
+      MM_LOGSETTINGS_CONSOLELEVEL: DEBUG
+      MM_LOGSETTINGS_ENABLEDIAGNOSTICS: "false"
+      # Go reads this on Linux: system roots plus the fake's CA.
+      SSL_CERT_FILE: /certs/ca-bundle.crt
+      # All outbound HTTPS goes through the fake's proxy, which refuses Google hosts it does not
+      # fake. server:up:real sets MM_HTTPS_PROXY to empty; if it were forgotten, every Google call
+      # would fail (no fake-google host) rather than reach real Google.
+      HTTPS_PROXY: ${MM_HTTPS_PROXY-http://fake-google:3128}
+      NO_PROXY: localhost,127.0.0.1,mattermost,postgres
+      # The image has no shell or curl, so the healthcheck pings the server through mmctl over
+      # the local-mode socket.
+      MM_SERVICESETTINGS_ENABLELOCALMODE: "true"
+    healthcheck:
+      test: ["CMD", "/mattermost/bin/mmctl", "--local", "system", "status"]
+      interval: 5s
+      timeout: 10s
+      retries: 60
+      start_period: 20s
+
+volumes:
+  certs: {}
