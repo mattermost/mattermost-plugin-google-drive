@@ -31,7 +31,7 @@ export default defineConfig({
     outputDir: './results/output',
 
     // No platform suffix: baselines always come from the dockerized browser.
-    snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
+    snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}{ext}',
 
     // One worker per server (mattermost-server e2e-tests/playwright/AGENTS.md). The Google test
     // accounts are shared too, so specs must never run concurrently.

@@ -1,6 +1,6 @@
 # Include custom targets and environment variables here
 
-E2E_DIR = e2e
+E2E_DIR = e2e/playwright
 
 $(E2E_DIR)/node_modules: $(E2E_DIR)/package.json $(E2E_DIR)/package-lock.json
 	cd $(E2E_DIR) && npm ci && npx playwright install chromium

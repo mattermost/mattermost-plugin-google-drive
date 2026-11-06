@@ -3,28 +3,28 @@
 
 // Screenshot baselines of everything the plugin renders: its interactive dialogs and its bot
 // posts. Run with `npm run test:visual`; after an intended UI change, run
-// `npm run test:visual-update-snapshots` and review the PNGs in __screenshots__/visual.spec.ts/.
+// `npm run test:visual-update-snapshots` and review the PNGs in visual.spec.ts-snapshots/.
 // Names below are fixed (no e2e-<runId>- prefix) because they appear in the screenshots; the
 // fake Google holds the files, so nothing needs cleaning up.
 
 import type {PlaywrightExtended} from '@mattermost/playwright-lib';
 
-import {createPrivateChannelWith} from '../lib/channels';
-import {ensureDrivePlugin} from '../lib/drive_plugin';
-import {requireGoogle, seedConnectedGoogleUser} from '../lib/google/auth';
-import {addComment, createGoogleDoc, googleDisplayName, shareWithUser} from '../lib/google/drive';
-import {googleMode} from '../lib/google/mode';
-import {clearWatchChannel} from '../lib/kv';
-import {postWithFiles} from '../lib/posts';
-import {expect, test} from '../lib/test';
-import {mattermostUserFor} from '../lib/users';
-import {clipAround, routeExternalRequests, settle} from '../lib/visual';
-import {CreateFileDialog, FILE_ACCESS} from '../pages/create_file_dialog';
-import {DriveAccountPosts} from '../pages/drive_account_posts';
-import {DriveFilePosts} from '../pages/drive_file_posts';
-import {DriveNotificationPosts, ReplyToCommentDialog} from '../pages/drive_notification_posts';
-import {DRIVE_SUBCOMMANDS, DriveSlashCommand} from '../pages/drive_slash_command';
-import {openUploadAction, UPLOAD_ACTIONS, UploadAllFilesDialog, UploadFileDialog} from '../pages/upload_dialogs';
+import {createPrivateChannelWith} from '../../lib/channels';
+import {ensureDrivePlugin} from '../../lib/drive_plugin';
+import {requireGoogle, seedConnectedGoogleUser} from '../../lib/google/auth';
+import {addComment, createGoogleDoc, googleDisplayName, shareWithUser} from '../../lib/google/drive';
+import {googleMode} from '../../lib/google/mode';
+import {clearWatchChannel} from '../../lib/kv';
+import {postWithFiles} from '../../lib/posts';
+import {expect, test} from '../../lib/test';
+import {mattermostUserFor} from '../../lib/users';
+import {clipAround, routeExternalRequests, settle} from '../../lib/visual';
+import {CreateFileDialog, FILE_ACCESS} from '../../pages/create_file_dialog';
+import {DriveAccountPosts} from '../../pages/drive_account_posts';
+import {DriveFilePosts} from '../../pages/drive_file_posts';
+import {DriveNotificationPosts, ReplyToCommentDialog} from '../../pages/drive_notification_posts';
+import {DRIVE_SUBCOMMANDS, DriveSlashCommand} from '../../pages/drive_slash_command';
+import {openUploadAction, UPLOAD_ACTIONS, UploadAllFilesDialog, UploadFileDialog} from '../../pages/upload_dialogs';
 
 const NOTIFICATION_TIMEOUT = 60_000;
 

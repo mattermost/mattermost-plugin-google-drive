@@ -8,7 +8,7 @@ import zlib from 'zlib';
 import type {Client4} from '@mattermost/client';
 import {expect} from '@playwright/test';
 
-import manifest from '../../plugin.json';
+import manifest from '../../../plugin.json';
 
 import {assertServerAlive, preservedServiceSettings} from './server_mode';
 
@@ -36,9 +36,9 @@ export const UNCONFIGURED_OAUTH: DrivePluginSettings = {
     googleOAuthClientSecret: '',
 };
 
-/** Returns the single plugin bundle in ../dist, failing with a fix-it message otherwise. */
+/** Returns the single plugin bundle in the repo's dist/, failing with a fix-it message otherwise. */
 export function findPluginBundle(): string {
-    const distDir = path.join(__dirname, '..', '..', 'dist');
+    const distDir = path.join(__dirname, '..', '..', '..', 'dist');
     const bundles = fs.existsSync(distDir) ? fs.readdirSync(distDir).filter((f) => f.endsWith('.tar.gz')) : [];
     if (bundles.length !== 1) {
         throw new Error(

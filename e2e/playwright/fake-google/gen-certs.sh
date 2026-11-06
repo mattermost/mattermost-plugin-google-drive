@@ -1,11 +1,11 @@
 #!/bin/sh
 # Creates a throwaway CA and a certificate for the Google hosts the fake answers for, then a CA
 # bundle (system roots plus the throwaway CA) for Mattermost's SSL_CERT_FILE. Runs in the `certs`
-# service of e2e/docker-compose.yml. Adapted from mattermost-plugin-mscalendar
+# service of e2e/playwright/docker-compose.yml. Adapted from mattermost-plugin-mscalendar
 # e2e/playwright/fake-microsoft/gen-certs.sh.
 set -eu
 
-# FAKE_GOOGLE_HOSTS is set in e2e/docker-compose.yml, which gives the fake the same list.
+# FAKE_GOOGLE_HOSTS is set in e2e/playwright/docker-compose.yml, which gives the fake the same list.
 HOSTS="$FAKE_GOOGLE_HOSTS"
 
 cd /certs

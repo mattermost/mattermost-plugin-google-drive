@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the @visual specs (specs/visual.spec.ts) on their own throwaway compose project: a pinned
+# Runs the @visual specs (specs/visual/visual.spec.ts) on their own throwaway compose project: a pinned
 # Mattermost release on port 8076, the fake Google, and a dockerized Playwright browser
 # (docker-compose.visual.yml), so the screenshots match on any machine and in CI. It never touches
 # the normal stack (npm run server:up), which can keep running. Extra arguments go to
@@ -41,7 +41,7 @@ cleanup() {
   if [ "$status" -ne 0 ]; then
     mkdir -p logs
     compose logs --no-color > logs/visual-containers.log 2>&1 || true
-    echo "Container logs: e2e/logs/visual-containers.log"
+    echo "Container logs: e2e/playwright/logs/visual-containers.log"
   fi
   compose down -v >/dev/null 2>&1 || true
   exit "$status"

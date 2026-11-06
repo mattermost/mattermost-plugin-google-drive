@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-// Helpers for specs/visual.spec.ts. script/visual.sh runs them on their own compose project with
+// Helpers for specs/visual/visual.spec.ts. script/visual.sh runs them on their own compose project with
 // another port, a pinned server image, and a Playwright browser in a container that shares
 // Mattermost's network namespace (docker-compose.visual.yml), so screenshots match on any machine
 // and in CI.

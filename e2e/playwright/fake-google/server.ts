@@ -52,7 +52,7 @@ const GOOGLE_DOMAIN = /(^|\.)(google\.com|googleapis\.com|googleusercontent\.com
 // network is the mattermost container.
 const SITE_URL = process.env.FAKE_SITE_URL || 'http://localhost:8065';
 const MATTERMOST_URL = process.env.FAKE_MATTERMOST_URL || 'http://mattermost:8065';
-// Visual tests (e2e/lib/visual.ts) set this: the created-file post prints the file's createdTime.
+// Visual tests (e2e/playwright/lib/visual.ts) set this: the created-file post prints the file's createdTime.
 const FIXED_CREATED_TIME = process.env.FAKE_FIXED_CREATED_TIME;
 
 const CLIENT_ID = 'fake-client-id.apps.googleusercontent.com';
@@ -1133,7 +1133,7 @@ proxy.on('connect', (req: http.IncomingMessage, client: net.Socket, head: Buffer
     if (FAKE_HOSTS.has(host)) {
         target = {host: '127.0.0.1', port: HTTPS_PORT};
     } else if (GOOGLE_DOMAIN.test(host)) {
-        violation(`Mattermost called ${host}, which the fake does not answer for. Add it to FAKE_GOOGLE_HOSTS in e2e/docker-compose.yml and route it in fake-google/server.ts.`);
+        violation(`Mattermost called ${host}, which the fake does not answer for. Add it to FAKE_GOOGLE_HOSTS in e2e/playwright/docker-compose.yml and route it in fake-google/server.ts.`);
         client.end(`HTTP/1.1 502 fake-google has no route for ${host}\r\n\r\n`);
         return;
     }

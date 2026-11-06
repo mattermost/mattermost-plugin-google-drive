@@ -8,7 +8,7 @@ import (
 
 // TestDecryptE2ECryptoVector pins the token encryption format the Playwright e2e suite relies on
 // to seed connected users directly into the plugin KV store. The vector is produced by
-// e2e/lib/crypto.ts (CRYPTO_TEST_VECTOR); keep the two in sync.
+// e2e/playwright/lib/crypto.ts (CRYPTO_TEST_VECTOR); keep the two in sync.
 func TestDecryptE2ECryptoVector(t *testing.T) {
 	const (
 		key        = "e2e-test-encryption-key-32-chars"

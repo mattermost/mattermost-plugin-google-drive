@@ -1,4 +1,4 @@
-# Playwright e2e suite against the fake Google (e2e/fake-google). Needs no Google accounts or
+# Playwright e2e suite against the fake Google (e2e/playwright/fake-google). Needs no Google accounts or
 # secrets, so it runs on every PR. The real-Google lane (`npm run test:real`) is not in CI yet:
 # it waits for the Google Workspace test org and its GCP project.
 name: e2e
@@ -17,19 +17,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Two servers, as in mattermost-plugin-jira's e2e.yml: the oldest the plugin supports
-  # (min_server_version 12.0.0 in plugin.json; bump this with it), and master, which catches core
-  # changes that break the plugin before they ship in the next monthly release.
+  # Two servers: the oldest the plugin supports (min_server_version 12.0.0 in plugin.json; bump
+  # this with it), and master, which catches core changes that break the plugin before they ship
+  # in the next monthly release. Only min-server gates merges: master moves daily, so a core
+  # regression there should be visible without blocking unrelated plugin PRs.
   fake-google:
     name: fake-google (${{ matrix.server }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.server == 'master' }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - server: min-server
-            image: mattermostdevelopment/mattermost-enterprise-edition:release-12.0
+            image: mattermost/mattermost-enterprise-edition:12.0
           - server: master
             image: mattermostdevelopment/mattermost-enterprise-edition:master
     env:
@@ -37,7 +39,7 @@ jobs:
       MM_IMAGE: ${{ matrix.image }}
     defaults:
       run:
-        working-directory: e2e
+        working-directory: e2e/playwright
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,7 +55,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             webapp/package-lock.json
-            e2e/package-lock.json
+            e2e/playwright/package-lock.json
 
       # Runs in the background so the image pulls overlap with the plugin build (as in
       # mattermost-plugin-mscalendar's e2e.yml).
@@ -101,8 +103,8 @@ jobs:
         with:
           name: e2e-report-${{ matrix.server }}
           path: |
-            e2e/results/reporter
-            e2e/logs
+            e2e/playwright/results/reporter
+            e2e/playwright/logs
           retention-days: 7
 
       - name: Stop the stack
@@ -110,7 +112,7 @@ jobs:
         working-directory: .
         run: make e2e-env-down
 
-  # Screenshot baselines of the plugin's dialogs and bot posts (e2e/specs/visual.spec.ts), on a
+  # Screenshot baselines of the plugin's dialogs and bot posts (e2e/playwright/specs/visual/visual.spec.ts), on a
   # pinned server with a dockerized browser. Non-blocking: when a baseline changes, a person looks
   # at the diff and commits new PNGs (npm run test:visual-update-snapshots).
   visual:
@@ -119,7 +121,7 @@ jobs:
     continue-on-error: true
     defaults:
       run:
-        working-directory: e2e
+        working-directory: e2e/playwright
     steps:
       - uses: actions/checkout@v4
         with:
@@ -135,7 +137,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             webapp/package-lock.json
-            e2e/package-lock.json
+            e2e/playwright/package-lock.json
 
       - name: Build the plugin bundle
         working-directory: .
@@ -158,7 +160,7 @@ jobs:
         with:
           name: e2e-visual-report
           path: |
-            e2e/results/reporter
-            e2e/results/output
-            e2e/logs
+            e2e/playwright/results/reporter
+            e2e/playwright/results/output
+            e2e/playwright/logs
           retention-days: 7

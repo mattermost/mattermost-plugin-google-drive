@@ -1,6 +1,5 @@
 // Copied from mattermost/mattermost e2e-tests/playwright/script/lint-test-docs.js at b0ddc5a13a (2026-10-20).
-// Keep in sync manually; do not edit beyond this header, except for the one local change marked
-// below (nodir: the visual baselines live in a directory named specs/__screenshots__/visual.spec.ts).
+// Keep in sync manually; do not edit beyond this header.
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
@@ -49,8 +48,7 @@ const patterns = {
 };
 
 // Get all spec files
-// Local change: nodir.
-const specFiles = glob.sync(path.join(process.cwd(), 'specs/**/*.spec.ts'), {nodir: true});
+const specFiles = glob.sync(path.join(process.cwd(), 'specs/**/*.spec.ts'));
 
 // Results
 const results = {

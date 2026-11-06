@@ -30,7 +30,7 @@ npm run server:down
 |---|---|
 | `npm test` | All specs against the fake Google, except `@visual` |
 | `npm run test:real` | All specs against real Google (start the stack with `npm run server:up:real`). Tests whose credentials are missing skip locally and fail in CI |
-| `npm run test:visual` | Screenshot baselines (`specs/visual.spec.ts`) on their own pinned stack with a dockerized browser |
+| `npm run test:visual` | Screenshot baselines (`specs/visual/visual.spec.ts`) on their own pinned stack with a dockerized browser |
 | `npm run test:visual-update-snapshots` | Regenerates the baselines; review and commit the PNGs |
 | `npm run check` | Type check, ESLint, test-doc lint and the token encryption check |
 | `npm run contract:check` | Reports changes in Google's published specs since `fake-google/contract/specs/` was updated (also runs daily in CI) |
