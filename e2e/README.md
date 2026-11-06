@@ -54,14 +54,13 @@ the fake returns) and run `npm run contract:update`.
   in `docker-compose.yml` and route it in `fake-google/server.ts`, then recreate the stack
   (`npm run server:down && npm run server:up`) so the certificate covers it.
 
-## Known issues
+## Visual baselines
 
-- **Visual baselines are arm64 renders.** They were generated on an Apple silicon Mac, because
-  amd64 Chromium under Docker Desktop's Rosetta emulation never finishes loading Mattermost.
-  CI runs on amd64, so the `visual` job is likely to report anti-aliasing diffs, and it is
-  `continue-on-error`, so nobody notices. Fix: regenerate the baselines once on an amd64 machine
-  (or in a manual CI workflow that uploads them as an artifact) and commit those PNGs. Until then,
-  treat a failing `visual` job as unverified.
+The committed baselines were rendered on arm64 (an Apple silicon Mac, because amd64 Chromium under
+Docker Desktop's Rosetta emulation never finishes loading Mattermost). They match CI's amd64
+renders with Playwright's default threshold (checked 2026-11-06). The `visual` job stays
+`continue-on-error` until it has a longer track record. If it starts reporting anti-aliasing
+diffs, regenerate the baselines on an amd64 machine and commit those PNGs.
 
 ## Writing tests
 
