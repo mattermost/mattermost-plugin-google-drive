@@ -1,10 +1,12 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import crypto from 'crypto';
+
 import {ensureDrivePlugin} from '../lib/drive_plugin';
 import {configuredGoogleAccount, GoogleAccount, requireGoogle, seedConnectedGoogleUser} from '../lib/google/auth';
 import {e2eFileName, findFilesByNamePrefix, trashRunFiles} from '../lib/google/drive';
-import {postWithFiles} from '../lib/posts';
+import {postedFileContent, postWithFiles} from '../lib/posts';
 import {expect, test} from '../lib/test';
 import {mattermostUserFor} from '../lib/users';
 import {openUploadAction, UPLOAD_ACTIONS, UploadAllFilesDialog, UploadFileDialog, UploadPosts} from '../pages/upload_dialogs';
@@ -17,10 +19,15 @@ test.afterEach(async () => {
     }
 });
 
-/** The names of the run's files in the owner's Drive, sorted. */
-async function uploadedNames(account: GoogleAccount): Promise<string[]> {
+/** The run's files in the owner's Drive, with their content checksums, sorted by name. */
+async function uploadedFiles(account: GoogleAccount): Promise<Array<{name: string; md5Checksum?: string}>> {
     const files = await findFilesByNamePrefix(account, `e2e-${process.env.E2E_RUN_ID}-`);
-    return files.map((f) => f.name).sort();
+    return files.map(({name, md5Checksum}) => ({name, md5Checksum})).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** What uploadedFiles returns for a file posted by postWithFiles and uploaded intact. */
+function posted(name: string) {
+    return {name, md5Checksum: crypto.createHash('md5').update(postedFileContent(name)).digest('hex')};
 }
 
 /**
@@ -53,8 +60,8 @@ test('uploads the chosen attachment of a post to Google Drive from the post menu
     // * Verify the plugin confirms the upload
     await expect(new UploadPosts(channelsPage).fileUploaded).toBeVisible();
 
-    // * Verify only the chosen file is in the owner's Google Drive
-    expect(await uploadedNames(accounts.owner)).toEqual([chosen]);
+    // * Verify only the chosen file is in the owner's Google Drive, with the posted contents
+    expect(await uploadedFiles(accounts.owner)).toEqual([posted(chosen)]);
 });
 
 /**
@@ -87,6 +94,6 @@ test('uploads all attachments of a post to Google Drive from the post menu', {ta
     // * Verify the plugin confirms the upload
     await expect(new UploadPosts(channelsPage).allFilesUploaded).toBeVisible();
 
-    // * Verify both files are in the owner's Google Drive
-    expect(await uploadedNames(accounts.owner)).toEqual([...names].sort());
+    // * Verify both files are in the owner's Google Drive, with the posted contents
+    expect(await uploadedFiles(accounts.owner)).toEqual([...names].sort().map(posted));
 });

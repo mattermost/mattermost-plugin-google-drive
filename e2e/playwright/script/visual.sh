@@ -31,6 +31,9 @@ export E2E_GOOGLE=fake
 export E2E_SERVER=compose
 export PW_BASE_URL="http://localhost:$MM_PORT"
 export PW_VISUAL_BROWSER_WS="ws://127.0.0.1:$VISUAL_BROWSER_PORT/"
+# Pin these too: global_setup.ts keeps inherited values, and .env.local may point them at another stack.
+export E2E_DATABASE_URL="postgres://mmuser:mostest@localhost:$E2E_DB_PORT/mattermost_test"
+export FAKE_GOOGLE_URL="http://127.0.0.1:$FAKE_GOOGLE_PORT"
 
 compose() {
   docker compose -p gdrive-plugin-e2e-visual -f docker-compose.yml -f docker-compose.visual.yml --profile fake "$@"

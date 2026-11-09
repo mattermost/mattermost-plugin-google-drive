@@ -6,7 +6,7 @@ import {ensureDrivePlugin} from '../lib/drive_plugin';
 import {configuredGoogleAccount, requireGoogle, seedConnectedGoogleUser} from '../lib/google/auth';
 import {addComment, createGoogleDoc, e2eFileName, getComment, googleDisplayName, shareWithUser, trashRunFiles} from '../lib/google/drive';
 import {requireDrivePush} from '../lib/google/mode';
-import {clearWatchChannel, hasWatchChannel, watchChannelToken} from '../lib/kv';
+import {hasWatchChannel, resetWatchChannel, stopTestWatchChannels, watchChannelId, watchChannelToken} from '../lib/kv';
 import {expect, test} from '../lib/test';
 import {mattermostUserFor} from '../lib/users';
 import {DriveAccountPosts} from '../pages/drive_account_posts';
@@ -18,6 +18,9 @@ import {DRIVE_SUBCOMMANDS, DriveSlashCommand} from '../pages/drive_slash_command
 const NOTIFICATION_TIMEOUT = 60_000;
 
 test.afterEach(async () => {
+    // # Stop the test's Drive watch channel, so it gets no pushes from later tests
+    await stopTestWatchChannels();
+
     // # Move the Google files this run created to the owners' Drive trash
     for (const role of ['owner', 'collab'] as const) {
         const account = configuredGoogleAccount(role);
@@ -42,7 +45,7 @@ test('notifies the owner of a comment on their Google Doc and posts the reply fr
     await ensureDrivePlugin(adminClient, oauth);
     const owner = await mattermostUserFor(adminClient, accounts.owner, team);
     await seedConnectedGoogleUser(owner.id, accounts.owner);
-    await clearWatchChannel(owner.id);
+    await resetWatchChannel(accounts.owner, owner.id);
     const file = await createGoogleDoc(accounts.owner, e2eFileName('comments'));
     await shareWithUser(accounts.owner, file.id, accounts.collab.email, 'commenter');
 
@@ -72,9 +75,10 @@ test('notifies the owner of a comment on their Google Doc and posts the reply fr
     await dialog.reply(replyText);
 
     // * Verify the reply was added to the comment thread in Google Drive, written by the owner
+    const ownerName = await googleDisplayName(accounts.owner);
     await expect
-        .poll(async () => (await getComment(accounts.collab, file.id, comment.id)).replies.map((r) => r.content))
-        .toContain(replyText);
+        .poll(async () => (await getComment(accounts.collab, file.id, comment.id)).replies.find((r) => r.content === replyText)?.author.displayName)
+        .toBe(ownerName);
 });
 
 /**
@@ -92,7 +96,7 @@ test('notifies a user when a collaborator shares a Google Doc with them', {tag: 
     await ensureDrivePlugin(adminClient, oauth);
     const owner = await mattermostUserFor(adminClient, accounts.owner, team);
     await seedConnectedGoogleUser(owner.id, accounts.owner);
-    await clearWatchChannel(owner.id);
+    await resetWatchChannel(accounts.owner, owner.id);
 
     // # Log in as the owner and start activity notifications
     const {channelsPage} = await pw.testBrowser.login(owner);
@@ -128,7 +132,7 @@ test('starts and stops Google Drive activity notifications and reports when they
     await ensureDrivePlugin(adminClient, oauth);
     const owner = await mattermostUserFor(adminClient, accounts.owner, team);
     await seedConnectedGoogleUser(owner.id, accounts.owner);
-    await clearWatchChannel(owner.id);
+    await resetWatchChannel(accounts.owner, owner.id);
 
     // # Log in as the owner and start notifications twice
     const {channelsPage} = await pw.testBrowser.login(owner);
@@ -138,11 +142,12 @@ test('starts and stops Google Drive activity notifications and reports when they
     const notifications = new DriveNotificationPosts(channelsPage);
     await slashCommand.run(DRIVE_SUBCOMMANDS.notifications, 'start');
     await expect(notifications.enabled).toBeVisible();
+    const firstChannelId = await watchChannelId(owner.id);
     await slashCommand.run(DRIVE_SUBCOMMANDS.notifications, 'start');
 
     // * Verify the plugin registered a Drive watch channel and does not register a second one
     await expect(notifications.alreadyEnabled).toBeVisible();
-    expect(await hasWatchChannel(owner.id)).toBe(true);
+    expect(await watchChannelId(owner.id)).toBe(firstChannelId);
 
     // # Stop notifications twice
     await slashCommand.run(DRIVE_SUBCOMMANDS.notifications, 'stop');
@@ -169,7 +174,7 @@ test('rejects a Drive push notification with the wrong channel token', {tag: '@g
     await ensureDrivePlugin(adminClient, oauth);
     const owner = await mattermostUserFor(adminClient, accounts.owner, team);
     await seedConnectedGoogleUser(owner.id, accounts.owner);
-    await clearWatchChannel(owner.id);
+    await resetWatchChannel(accounts.owner, owner.id);
     const {channelsPage} = await pw.testBrowser.login(owner);
     await channelsPage.goto(team.name);
     await channelsPage.toBeVisible();

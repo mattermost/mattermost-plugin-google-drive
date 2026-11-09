@@ -21,5 +21,10 @@ export async function createPrivateChannelWith(adminClient: Client4, team: Team,
     for (const userId of userIds) {
         await adminClient.addToChannel(userId, channel.id);
     }
+    // The admin who created the channel is a member too; the plugin would share with its address.
+    const admin = await adminClient.getMe();
+    if (!userIds.includes(admin.id)) {
+        await adminClient.removeFromChannel(admin.id, channel.id);
+    }
     return channel;
 }

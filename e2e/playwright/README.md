@@ -36,7 +36,7 @@ npm run server:down
 | `npm run contract:check` | Reports changes in Google's published specs since `fake-google/contract/specs/` was updated (also runs daily in CI) |
 | `npm run contract:update` | Regenerates `fake-google/contract/specs/` from Google and `fake-google/contract/operations.json` |
 | `npm run google:auth -- owner` | Real lane only: gets a refresh token for a test account into `.env.local` |
-| `npm run sweep` | Real lane only: trashes leftover `e2e-` files in the test accounts' Drives |
+| `npm run sweep` | Real lane only: lists leftover `e2e-` files in the test accounts' Drives; `npm run sweep -- --delete` moves them to the Drive trash |
 
 Settings for external servers, real Google and the compose ports are in `.env.example`.
 

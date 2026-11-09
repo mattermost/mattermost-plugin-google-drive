@@ -49,9 +49,28 @@ export function preservedServiceSettings(): Record<string, unknown> {
     return raw ? JSON.parse(raw) : {};
 }
 
+/**
+ * Saves the server's pre-run config. Refuses to overwrite an existing backup: one is only left
+ * behind when a run was interrupted or its restore failed, so the server may still have the test
+ * config, and saving that over the backup would lose the original.
+ */
 export function saveExternalConfigBackup(config: unknown) {
     fs.mkdirSync(path.dirname(EXTERNAL_CONFIG_BACKUP), {recursive: true});
-    fs.writeFileSync(EXTERNAL_CONFIG_BACKUP, JSON.stringify(config, null, 2));
+    try {
+        fs.writeFileSync(EXTERNAL_CONFIG_BACKUP, JSON.stringify(config, null, 2), {flag: 'wx'});
+    } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== 'EEXIST') {
+            throw err;
+        }
+        throw new Error(
+            `${EXTERNAL_CONFIG_BACKUP} is left from an earlier run that did not restore the external server's config. ` +
+                'Restore it (System Console or mmctl) if the server still has the test config, then delete the file and rerun.',
+        );
+    }
+}
+
+export function removeExternalConfigBackup() {
+    fs.rmSync(EXTERNAL_CONFIG_BACKUP, {force: true});
 }
 
 export function readExternalConfigBackup(): unknown | null {

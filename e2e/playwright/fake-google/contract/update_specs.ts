@@ -337,5 +337,7 @@ function compareSchema(old: JsonSchema, next: JsonSchema, at: string, out: {brea
     }
     if (typeof old.additionalProperties === 'object' && typeof next.additionalProperties === 'object') {
         compareSchema(old.additionalProperties, next.additionalProperties, `${at}{}`, out);
+    } else if (typeof old.additionalProperties === 'object' && next.additionalProperties === false) {
+        out.breaking.push(`${at} no longer allows additional properties`);
     }
 }

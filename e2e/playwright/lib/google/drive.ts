@@ -33,7 +33,8 @@ export async function listPermissions(account: GoogleAccount, fileId: string): P
     return body.permissions.map((p) => ({...p, emailAddress: p.emailAddress?.toLowerCase()}));
 }
 
-export type DriveFile = {id: string; name: string; mimeType: string};
+/** `md5Checksum` is only set for uploaded (non-Google) files, and only where requested. */
+export type DriveFile = {id: string; name: string; mimeType: string; md5Checksum?: string};
 
 export async function getFile(account: GoogleAccount, fileId: string): Promise<DriveFile> {
     return driveRequest<DriveFile>(account, `/files/${fileId}?fields=id,name,mimeType`);
@@ -51,11 +52,18 @@ export async function findFilesByNamePrefix(account: GoogleAccount, prefix: stri
         throw new Error(`Refusing to search Drive for a prefix that is not an e2e prefix: ${prefix}`);
     }
     const q = `name contains '${prefix.replace(/'/g, "\\'")}' and 'me' in owners and trashed = false`;
-    const body = await driveRequest<{files: DriveFile[]}>(
-        account,
-        `/files?q=${encodeURIComponent(q)}&fields=files(id,name,mimeType)&pageSize=100`,
-    );
-    return body.files.filter((f) => f.name.startsWith(prefix));
+    const files: DriveFile[] = [];
+    let pageToken: string | undefined;
+    do {
+        const page = `&pageSize=100${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+        const body = await driveRequest<{files: DriveFile[]; nextPageToken?: string}>(
+            account,
+            `/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,md5Checksum)${page}`,
+        );
+        files.push(...body.files);
+        pageToken = body.nextPageToken;
+    } while (pageToken);
+    return files.filter((f) => f.name.startsWith(prefix));
 }
 
 /**
@@ -83,6 +91,24 @@ export async function trashFile(account: GoogleAccount, fileId: string) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({trashed: true}),
     });
+}
+
+/**
+ * Stops a Drive push channel (drive.channels.stop), so Drive sends no more notifications to it.
+ * A channel that is already gone (404) counts as stopped.
+ */
+export async function stopDriveChannel(account: GoogleAccount, channel: {channelId: string; resourceId: string}) {
+    try {
+        await driveRequest(account, '/channels/stop', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: channel.channelId, resourceId: channel.resourceId}),
+        });
+    } catch (err) {
+        if (!String(err).includes(' 404 ')) {
+            throw err;
+        }
+    }
 }
 
 /** Trashes every file this run created in the account's Drive. */

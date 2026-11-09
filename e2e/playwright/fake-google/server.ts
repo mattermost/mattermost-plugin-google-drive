@@ -109,6 +109,9 @@ const state = {
     requests: [] as LoggedRequest[],
     violations: [] as string[],
     divergences: [] as string[],
+    // Violations that arrived after the test that caused them had been checked (a late push, the
+    // plugin's follow-up reads). The next test moves them here; global teardown fails the run on them.
+    late: [] as string[],
 };
 
 function reset() {
@@ -124,6 +127,7 @@ function reset() {
     state.requests = [];
     state.violations = [];
     state.divergences = [];
+    state.late = [];
 }
 
 const now = () => new Date().toISOString();
@@ -804,6 +808,9 @@ function route(match: MethodMatch, user: User, query: URLSearchParams, body: Jso
         if (!comment) {
             return driveError(404, 'notFound', `Comment not found: ${p.commentId}.`, 'commentId');
         }
+        if (roleOf(file, user) === 'reader') {
+            return driveError(403, 'insufficientFilePermissions', 'The user does not have sufficient permissions for this file.');
+        }
         const time = now();
         const reply: Reply = {id: `AAAA${randomId(10)}`, author: user.key, content: body?.content ?? '', createdTime: time, modifiedTime: time, deleted: false, ...(body?.action ? {action: body.action} : {})};
         comment.replies.push(reply);
@@ -977,12 +984,20 @@ function control(method: string, segments: string[], body: Json): Result {
         return {status: 200, body: {value: state.requests}};
     }
     if (section === 'violations') {
-        if (method === 'DELETE') {
+        const current = {value: state.violations, divergences: state.divergences};
+        if (method === 'POST' && segments[1] === 'take') {
+            // Read and clear in one step, so nothing recorded in between is lost.
             state.violations = [];
             state.divergences = [];
-            return {status: 204};
+            return {status: 200, body: current};
         }
-        return {status: 200, body: {value: state.violations, divergences: state.divergences}};
+        if (method === 'POST' && segments[1] === 'defer') {
+            state.late.push(...state.violations);
+            state.violations = [];
+            state.divergences = [];
+            return {status: 200, body: current};
+        }
+        return {status: 200, body: {...current, late: state.late}};
     }
     return {status: 404, body: {error: `unknown control route ${method} /${segments.join('/')}`}};
 }

@@ -6,7 +6,7 @@ import {testConfig} from '@mattermost/playwright-lib';
 
 import {fakeGoogle} from './lib/fake_google';
 import {googleMode} from './lib/google/mode';
-import {EXTERNAL_CONFIG_BACKUP, readExternalConfigBackup, serverMode} from './lib/server_mode';
+import {EXTERNAL_CONFIG_BACKUP, readExternalConfigBackup, removeExternalConfigBackup, serverMode} from './lib/server_mode';
 
 // The compose stack keeps running after the run (npm run server:down removes it).
 export default async function globalTeardown() {
@@ -18,14 +18,16 @@ export default async function globalTeardown() {
         return;
     }
 
-    // lib/test.ts fails each test on its own violations and clears them. What is left came from
-    // outside a test (global setup, a late notification after the last test) and still fails the run.
+    // lib/test.ts fails each test on its own violations and takes them. What is left came from
+    // outside a test (global setup, a late notification after the last test), and `late` holds what
+    // arrived after the test that caused it was checked. Both still fail the run.
     const contract = await fakeGoogle.violations();
     for (const divergence of new Set(contract.divergences)) {
         console.log(`Fake Google accepted something real Google would reject: ${divergence}`);
     }
-    if (contract.value.length > 0) {
-        throw new Error(`Fake Google saw traffic that breaks the Google API contract:\n${[...new Set(contract.value)].join('\n')}`);
+    const unreported = [...new Set([...contract.late, ...contract.value])];
+    if (unreported.length > 0) {
+        throw new Error(`Fake Google saw traffic outside a test's check that breaks the Google API contract:\n${unreported.join('\n')}`);
     }
 }
 
@@ -41,11 +43,13 @@ async function restoreExternalServerConfig() {
         adminClient.setUrl(testConfig.baseURL);
         await adminClient.login(testConfig.adminUsername, testConfig.adminPassword);
         await adminClient.updateConfig(backup as any);
-        console.log(`Restored the external server's config from ${EXTERNAL_CONFIG_BACKUP}`);
     } catch (err) {
-        console.warn(
+        // Fail the run; the backup stays, and the next run's setup refuses to overwrite it.
+        throw new Error(
             `Could not restore the external server's config (${String(err)}). ` +
-                `The pre-run config is in ${EXTERNAL_CONFIG_BACKUP}; restore it from the System Console or with mmctl.`,
+                `The pre-run config is in ${EXTERNAL_CONFIG_BACKUP}; restore it from the System Console or with mmctl, then delete the file.`,
         );
     }
+    removeExternalConfigBackup();
+    console.log("Restored the external server's config");
 }

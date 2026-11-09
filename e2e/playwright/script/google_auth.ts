@@ -108,6 +108,8 @@ function saveToEnvFile(key: string, value: string) {
         lines.push(`${key}=${value}`, '');
     }
     fs.writeFileSync(ENV_FILE, lines.join('\n'), {mode: 0o600});
+    // `mode` only applies to a new file; a copied .env.example may be world-readable.
+    fs.chmodSync(ENV_FILE, 0o600);
 }
 
 function page(res: http.ServerResponse, status: number, message: string) {

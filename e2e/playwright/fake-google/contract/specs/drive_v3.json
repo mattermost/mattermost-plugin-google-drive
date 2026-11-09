@@ -559,6 +559,9 @@
         },
         "newStartPageToken": {
           "type": "string"
+        },
+        "nextPageToken": {
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -788,6 +791,28 @@
         },
         "writersCanShare": {
           "type": "boolean"
+        },
+        "fileExtension": {
+          "type": "string"
+        },
+        "fullFileExtension": {
+          "type": "string"
+        },
+        "headRevisionId": {
+          "type": "string"
+        },
+        "md5Checksum": {
+          "type": "string"
+        },
+        "originalFilename": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "pattern": "^-?[0-9]+$"
+        },
+        "webContentLink": {
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -800,6 +825,9 @@
           "items": {
             "$ref": "File"
           }
+        },
+        "nextPageToken": {
+          "type": "string"
         }
       },
       "additionalProperties": false

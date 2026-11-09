@@ -34,8 +34,12 @@ export type FakeGoogleAccounts = {
 export const fakeGoogle = {
     reset: () => control('POST', 'reset'),
     accounts: () => control<FakeGoogleAccounts>('GET', 'accounts'),
-    violations: () => control<{value: string[]; divergences: string[]}>('GET', 'violations'),
-    clearViolations: () => control('DELETE', 'violations'),
+    /** Everything recorded so far, including `late`: violations deferred past the test that caused them. */
+    violations: () => control<{value: string[]; divergences: string[]; late: string[]}>('GET', 'violations'),
+    /** Returns and clears the current violations in one step. */
+    takeViolations: () => control<{value: string[]; divergences: string[]}>('POST', 'violations/take'),
+    /** Moves the current violations to `late`, which global teardown fails the run on. */
+    deferViolations: () => control<{value: string[]; divergences: string[]}>('POST', 'violations/defer'),
     requests: async () => (await control<{value: Array<{method: string; host: string; path: string; status: number; methodId?: string}>}>('GET', 'requests')).value,
     setDomainSharingPolicy: (domainSharingPolicy: string) => control('POST', 'config', {domainSharingPolicy}),
 };

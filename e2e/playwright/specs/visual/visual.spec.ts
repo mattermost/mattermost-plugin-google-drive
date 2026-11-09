@@ -14,7 +14,7 @@ import {ensureDrivePlugin} from '../../lib/drive_plugin';
 import {requireGoogle, seedConnectedGoogleUser} from '../../lib/google/auth';
 import {addComment, createGoogleDoc, googleDisplayName, shareWithUser} from '../../lib/google/drive';
 import {googleMode} from '../../lib/google/mode';
-import {clearWatchChannel} from '../../lib/kv';
+import {resetWatchChannel, stopTestWatchChannels} from '../../lib/kv';
 import {postWithFiles} from '../../lib/posts';
 import {expect, test} from '../../lib/test';
 import {mattermostUserFor} from '../../lib/users';
@@ -34,6 +34,11 @@ const USERNAMES = {owner: 'drive.owner', collab: 'drive.collab'};
 test.describe('visual', {tag: '@visual'}, () => {
     test.skip(!process.env.PW_VISUAL_BROWSER_WS, 'Baselines only match the dockerized browser (npm run test:visual).');
     test.skip(googleMode() !== 'fake', 'Visual tests run against the fake Google only.');
+
+    test.afterEach(async () => {
+        // # Stop the test's Drive watch channel, so it gets no pushes from later tests
+        await stopTestWatchChannels();
+    });
 
     /**
      * Enables the plugin against the fake Google, connects the owner, and opens a private channel
@@ -158,7 +163,7 @@ test.describe('visual', {tag: '@visual'}, () => {
     test('matches baselines for the comment notification and the reply dialog', {tag: '@google_drive'}, async ({pw}) => {
         // # Share a Google Doc of the owner's with the collaborator and start the owner's notifications
         const {page, channelsPage, team, owner, accounts} = await openOwnerChannel(pw);
-        await clearWatchChannel(owner.id);
+        await resetWatchChannel(accounts.owner, owner.id);
         const file = await createGoogleDoc(accounts.owner, 'Quarterly report');
         await shareWithUser(accounts.owner, file.id, accounts.collab.email, 'commenter');
         const notifications = new DriveNotificationPosts(channelsPage);
@@ -195,7 +200,7 @@ test.describe('visual', {tag: '@visual'}, () => {
     test('matches baseline for the file shared notification', {tag: '@google_drive'}, async ({pw}) => {
         // # Start the owner's notifications, then create a Google Doc as the collaborator and share it with the owner
         const {channelsPage, team, owner, accounts} = await openOwnerChannel(pw);
-        await clearWatchChannel(owner.id);
+        await resetWatchChannel(accounts.owner, owner.id);
         const notifications = new DriveNotificationPosts(channelsPage);
         await new DriveSlashCommand(channelsPage).run(DRIVE_SUBCOMMANDS.notifications, 'start');
         await expect(notifications.enabled).toBeVisible();

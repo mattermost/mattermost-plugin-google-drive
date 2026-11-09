@@ -10,7 +10,8 @@ HOSTS="$FAKE_GOOGLE_HOSTS"
 
 cd /certs
 
-if [ -f fake.crt ] && [ -f fake.key ] && [ -f ca-bundle.crt ]; then
+# Reuse the certificates (the volume outlives `docker compose up`) only while they cover the same hosts.
+if [ -f fake.crt ] && [ -f fake.key ] && [ -f ca-bundle.crt ] && [ "$(cat hosts 2>/dev/null)" = "$HOSTS" ]; then
   exit 0
 fi
 
@@ -27,4 +28,5 @@ printf "subjectAltName=%s\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALS
 openssl x509 -req -in fake.csr -CA ca.crt -CAkey ca.key -CAcreateserial -days 825 -extfile san.ext -out fake.crt
 
 cat /etc/ssl/certs/ca-certificates.crt ca.crt > ca-bundle.crt
+printf "%s" "$HOSTS" > hosts
 chmod 644 ./*

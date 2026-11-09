@@ -8,7 +8,8 @@ import {googleMode} from './google/mode';
 
 /**
  * The `pw` test plus a check of the fake Google's contract after every test: traffic that breaks
- * Google's published contract fails the test that sent it, not the whole run at teardown. Specs
+ * Google's published contract fails the test that sent it. Traffic that arrives after a test was
+ * checked is kept and fails the run at global teardown. Specs
  * import `test` and `expect` from here.
  */
 export const test = base.extend<{fakeGoogleContract: void}>({
@@ -20,12 +21,15 @@ export const test = base.extend<{fakeGoogleContract: void}>({
                 return;
             }
 
-            // Drop anything an earlier test left behind (e.g. a late push notification).
-            await fakeGoogle.clearViolations();
+            // Anything recorded since the previous test's check arrived late (e.g. a push notification
+            // or the plugin's follow-up reads). Keep it for global teardown rather than failing this test.
+            const late = await fakeGoogle.deferViolations();
+            for (const message of new Set(late.value)) {
+                testInfo.annotations.push({type: 'fake-google late violation', description: message});
+            }
             await use();
 
-            const contract = await fakeGoogle.violations();
-            await fakeGoogle.clearViolations();
+            const contract = await fakeGoogle.takeViolations();
             for (const divergence of new Set(contract.divergences)) {
                 testInfo.annotations.push({type: 'fake-google divergence', description: divergence});
             }

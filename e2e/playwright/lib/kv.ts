@@ -9,6 +9,8 @@ import {Client} from 'pg';
 
 import {PLUGIN_ID, TEST_ENCRYPTION_KEY} from './drive_plugin';
 import {encrypt} from './crypto';
+import {GoogleAccount} from './google/auth';
+import {stopDriveChannel} from './google/drive';
 
 async function withDb<T>(fn: (db: Client) => Promise<T>): Promise<T> {
     const connectionString = process.env.E2E_DATABASE_URL;
@@ -82,14 +84,49 @@ export async function watchChannelToken(mmUserId: string): Promise<string> {
     return (JSON.parse(value.toString('utf8')) as {token: string}).token;
 }
 
+/** The Drive channel ID of the user's watch channel (model.WatchChannelData.ChannelID). */
+export async function watchChannelId(mmUserId: string): Promise<string> {
+    const value = await kvGet(watchChannelKey(mmUserId));
+    if (!value) {
+        throw new Error(`No Drive watch channel stored for user ${mmUserId}`);
+    }
+    return (JSON.parse(value.toString('utf8')) as {channel_id: string}).channel_id;
+}
+
 export async function hasWatchChannel(mmUserId: string): Promise<boolean> {
     return (await kvGet(watchChannelKey(mmUserId))) !== null;
 }
 
 /**
- * Forgets the user's watch channel, so `notifications start` registers a new one. The Mattermost
- * users for the Google accounts are reused across tests, and so would their channel be.
+ * Stops the user's Drive watch channel and forgets it, as `notifications stop` does
+ * (server/plugin/notifications.go stopDriveActivityNotifications), so `notifications start` registers
+ * a new one and the old channel gets no more pushes. The Mattermost users for the Google accounts are
+ * reused across tests, and so would their channel be. Does nothing when no channel is stored.
  */
-export async function clearWatchChannel(mmUserId: string) {
+export async function stopWatchChannel(account: GoogleAccount, mmUserId: string) {
+    const value = await kvGet(watchChannelKey(mmUserId));
+    if (!value) {
+        return;
+    }
+    const channel = JSON.parse(value.toString('utf8')) as {channel_id: string; resource_id: string};
+    await stopDriveChannel(account, {channelId: channel.channel_id, resourceId: channel.resource_id});
     await kvDelete(watchChannelKey(mmUserId));
+}
+
+// Users whose watch channel the current test may have started, so stopTestWatchChannels can stop
+// it even when the test fails before its own `notifications stop`.
+const testWatchers = new Map<string, GoogleAccount>();
+
+/** Stops any watch channel an earlier test or run left for the user; stopTestWatchChannels stops the test's own. */
+export async function resetWatchChannel(account: GoogleAccount, mmUserId: string) {
+    testWatchers.set(mmUserId, account);
+    await stopWatchChannel(account, mmUserId);
+}
+
+/** For afterEach: stops the watch channels of the users passed to resetWatchChannel in this test. */
+export async function stopTestWatchChannels() {
+    for (const [mmUserId, account] of testWatchers) {
+        await stopWatchChannel(account, mmUserId);
+    }
+    testWatchers.clear();
 }
