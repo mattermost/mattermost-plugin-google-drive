@@ -25,7 +25,8 @@ export default async function globalTeardown() {
     for (const divergence of new Set(contract.divergences)) {
         console.log(`Fake Google accepted something real Google would reject: ${divergence}`);
     }
-    const unreported = [...new Set([...contract.late, ...contract.value])];
+    const afterLast = contract.lastChecked ? `after "${contract.lastChecked}"` : 'before any test';
+    const unreported = [...new Set([...contract.late, ...contract.value.map((v) => `[${afterLast}] ${v}`)])];
     if (unreported.length > 0) {
         throw new Error(`Fake Google saw traffic outside a test's check that breaks the Google API contract:\n${unreported.join('\n')}`);
     }

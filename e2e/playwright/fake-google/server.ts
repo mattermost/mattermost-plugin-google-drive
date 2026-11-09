@@ -112,6 +112,8 @@ const state = {
     // Violations that arrived after the test that caused them had been checked (a late push, the
     // plugin's follow-up reads). The next test moves them here; global teardown fails the run on them.
     late: [] as string[],
+    // Title of the last test whose violations were taken, so late ones can say what they followed.
+    lastChecked: '',
 };
 
 function reset() {
@@ -128,6 +130,7 @@ function reset() {
     state.violations = [];
     state.divergences = [];
     state.late = [];
+    state.lastChecked = '';
 }
 
 const now = () => new Date().toISOString();
@@ -987,17 +990,21 @@ function control(method: string, segments: string[], body: Json): Result {
         const current = {value: state.violations, divergences: state.divergences};
         if (method === 'POST' && segments[1] === 'take') {
             // Read and clear in one step, so nothing recorded in between is lost.
+            state.lastChecked = typeof body?.test === 'string' ? body.test : '';
             state.violations = [];
             state.divergences = [];
             return {status: 200, body: current};
         }
         if (method === 'POST' && segments[1] === 'defer') {
-            state.late.push(...state.violations);
+            // Late traffic is asynchronous, so this names the test it followed, not necessarily its cause.
+            const after = state.lastChecked ? `after "${state.lastChecked}"` : 'before the first test';
+            const deferred = state.violations.map((v) => `[${after}] ${v}`);
+            state.late.push(...deferred);
             state.violations = [];
             state.divergences = [];
-            return {status: 200, body: current};
+            return {status: 200, body: {...current, value: deferred}};
         }
-        return {status: 200, body: {...current, late: state.late}};
+        return {status: 200, body: {...current, late: state.late, lastChecked: state.lastChecked}};
     }
     return {status: 404, body: {error: `unknown control route ${method} /${segments.join('/')}`}};
 }

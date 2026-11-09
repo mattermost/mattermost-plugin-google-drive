@@ -1,6 +1,8 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
+import path from 'path';
+
 import {expect, test as base} from '@mattermost/playwright-lib';
 
 import {fakeGoogle} from './fake_google';
@@ -29,7 +31,7 @@ export const test = base.extend<{fakeGoogleContract: void}>({
             }
             await use();
 
-            const contract = await fakeGoogle.takeViolations();
+            const contract = await fakeGoogle.takeViolations(`${path.basename(testInfo.file)} › ${testInfo.title}`);
             for (const divergence of new Set(contract.divergences)) {
                 testInfo.annotations.push({type: 'fake-google divergence', description: divergence});
             }
