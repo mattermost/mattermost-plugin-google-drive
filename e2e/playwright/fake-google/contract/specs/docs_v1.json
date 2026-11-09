@@ -1,0 +1,39 @@
+{
+  "api": "docs",
+  "version": "v1",
+  "methods": {
+    "docs.documents.create": {
+      "httpMethod": "POST",
+      "path": "/v1/documents",
+      "parameters": {},
+      "request": "Document",
+      "response": "Document"
+    }
+  },
+  "schemas": {
+    "Document": {
+      "type": "object",
+      "properties": {
+        "documentId": {
+          "type": "string"
+        },
+        "revisionId": {
+          "type": "string"
+        },
+        "suggestionsViewMode": {
+          "type": "string",
+          "enum": [
+            "DEFAULT_FOR_CURRENT_ACCESS",
+            "SUGGESTIONS_INLINE",
+            "PREVIEW_SUGGESTIONS_ACCEPTED",
+            "PREVIEW_WITHOUT_SUGGESTIONS"
+          ]
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

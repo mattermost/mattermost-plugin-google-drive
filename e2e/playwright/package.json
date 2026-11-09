@@ -1,0 +1,49 @@
+{
+  "name": "mattermost-plugin-google-drive-e2e",
+  "private": true,
+  "description": "Playwright e2e tests for the Google Drive plugin",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "server:up": "docker compose --profile fake up -d --wait",
+    "server:up:real": "MM_HTTPS_PROXY= docker compose up -d --wait",
+    "server:down": "docker compose --profile fake down -v",
+    "server:logs": "docker compose --profile fake logs --no-color",
+    "test": "playwright test --grep-invert @visual",
+    "test:real": "E2E_GOOGLE=real playwright test --grep-invert @visual",
+    "test:visual": "./script/visual.sh",
+    "test:visual-update-snapshots": "./script/visual.sh --update-snapshots",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "show-report": "playwright show-report results/reporter",
+    "tsc": "tsc --noEmit && tsc -p fake-google",
+    "lint:test-docs": "node script/lint-test-docs.js",
+    "lint": "eslint specs",
+    "check": "npm run tsc && npm run lint && npm run lint:test-docs && npm run verify:crypto",
+    "verify:crypto": "tsx script/verify_crypto_vector.ts",
+    "google:auth": "tsx script/google_auth.ts",
+    "sweep": "tsx script/sweep.ts",
+    "fake": "node fake-google/server.ts",
+    "contract:update": "node fake-google/contract/update_specs.ts",
+    "contract:check": "node fake-google/contract/update_specs.ts --check"
+  },
+  "devDependencies": {
+    "@mattermost/client": "11.3.0",
+    "@mattermost/playwright-lib": "11.4.0",
+    "@mattermost/types": "11.3.0",
+    "@playwright/test": "1.62.1",
+    "@types/node": "25.5.0",
+    "@types/pg": "8.15.6",
+    "@typescript-eslint/parser": "8.72.0",
+    "dotenv": "17.2.3",
+    "eslint": "9.39.5",
+    "glob": "13.0.6",
+    "pg": "8.20.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "playwright-core": "1.62.1"
+  }
+}

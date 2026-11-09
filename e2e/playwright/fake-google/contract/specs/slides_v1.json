@@ -1,0 +1,65 @@
+{
+  "api": "slides",
+  "version": "v1",
+  "methods": {
+    "slides.presentations.create": {
+      "httpMethod": "POST",
+      "path": "/v1/presentations",
+      "parameters": {},
+      "request": "Presentation",
+      "response": "Presentation"
+    }
+  },
+  "schemas": {
+    "Dimension": {
+      "type": "object",
+      "properties": {
+        "magnitude": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "UNIT_UNSPECIFIED",
+            "EMU",
+            "PT"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Presentation": {
+      "type": "object",
+      "properties": {
+        "locale": {
+          "type": "string"
+        },
+        "pageSize": {
+          "$ref": "Size"
+        },
+        "presentationId": {
+          "type": "string"
+        },
+        "revisionId": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Size": {
+      "type": "object",
+      "properties": {
+        "height": {
+          "$ref": "Dimension"
+        },
+        "width": {
+          "$ref": "Dimension"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,306 @@
+{
+  "api": "driveactivity",
+  "version": "v2",
+  "methods": {
+    "driveactivity.activity.query": {
+      "httpMethod": "POST",
+      "path": "/v2/activity:query",
+      "parameters": {},
+      "request": "QueryDriveActivityRequest",
+      "response": "QueryDriveActivityResponse"
+    }
+  },
+  "schemas": {
+    "Action": {
+      "type": "object",
+      "properties": {
+        "detail": {
+          "$ref": "ActionDetail"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ActionDetail": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "Comment"
+        },
+        "create": {
+          "$ref": "Create"
+        },
+        "delete": {
+          "$ref": "Delete"
+        },
+        "edit": {
+          "$ref": "Edit"
+        },
+        "permissionChange": {
+          "$ref": "PermissionChange"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Actor": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "User"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Comment": {
+      "type": "object",
+      "properties": {
+        "post": {
+          "$ref": "Post"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Create": {
+      "type": "object",
+      "properties": {
+        "new": {
+          "$ref": "New"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Delete": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "TYPE_UNSPECIFIED",
+            "TRASH",
+            "PERMANENT_DELETE"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DriveActivity": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "Action"
+          }
+        },
+        "actors": {
+          "type": "array",
+          "items": {
+            "$ref": "Actor"
+          }
+        },
+        "primaryActionDetail": {
+          "$ref": "ActionDetail"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "Target"
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DriveFile": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "DriveItem": {
+      "type": "object",
+      "properties": {
+        "driveFile": {
+          "$ref": "DriveFile"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "Owner"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Edit": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "FileComment": {
+      "type": "object",
+      "properties": {
+        "legacyCommentId": {
+          "type": "string"
+        },
+        "legacyDiscussionId": {
+          "type": "string"
+        },
+        "linkToDiscussion": {
+          "type": "string"
+        },
+        "parent": {
+          "$ref": "DriveItem"
+        }
+      },
+      "additionalProperties": false
+    },
+    "KnownUser": {
+      "type": "object",
+      "properties": {
+        "isCurrentUser": {
+          "type": "boolean"
+        },
+        "personName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "New": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "Owner": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "User"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Permission": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "ROLE_UNSPECIFIED",
+            "OWNER",
+            "ORGANIZER",
+            "FILE_ORGANIZER",
+            "EDITOR",
+            "COMMENTER",
+            "VIEWER",
+            "PUBLISHED_VIEWER"
+          ]
+        },
+        "user": {
+          "$ref": "User"
+        },
+        "anyone": {
+          "$ref": "Anyone"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PermissionChange": {
+      "type": "object",
+      "properties": {
+        "addedPermissions": {
+          "type": "array",
+          "items": {
+            "$ref": "Permission"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Post": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": [
+            "SUBTYPE_UNSPECIFIED",
+            "ADDED",
+            "DELETED",
+            "REPLY_ADDED",
+            "REPLY_DELETED",
+            "RESOLVED",
+            "REOPENED"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "QueryDriveActivityRequest": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "string"
+        },
+        "itemName": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer"
+        },
+        "pageToken": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "QueryDriveActivityResponse": {
+      "type": "object",
+      "properties": {
+        "activities": {
+          "type": "array",
+          "items": {
+            "$ref": "DriveActivity"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Target": {
+      "type": "object",
+      "properties": {
+        "driveItem": {
+          "$ref": "DriveItem"
+        },
+        "fileComment": {
+          "$ref": "FileComment"
+        }
+      },
+      "additionalProperties": false
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "knownUser": {
+          "$ref": "KnownUser"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Anyone": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  }
+}
