@@ -1,0 +1,32 @@
+# Cursor cloud agents only. start.sh links this file to e2e/playwright/docker-compose.override.yml
+# (excluded from git), which `docker compose` loads automatically, so `make e2e-env-up` and the npm
+# scripts pick it up. script/visual.sh passes its own -f files and is unaffected.
+#
+# It lets the agent's own browser complete Google sign-in against the fake: start.sh maps
+# accounts.google.com to 127.0.0.1 in /etc/hosts, the fake's HTTPS port is published on
+# 127.0.0.1:443, its certificate also covers accounts.google.com, and trust-fake-ca.sh trusts its
+# CA. The certificates live in a directory outside Docker, so `make e2e-env-down` (down -v) keeps
+# the same CA and the browser keeps trusting it.
+
+x-fake-google-hosts: &fake-google-hosts >-
+  www.googleapis.com docs.googleapis.com sheets.googleapis.com slides.googleapis.com
+  driveactivity.googleapis.com oauth2.googleapis.com accounts.google.com
+
+services:
+  certs:
+    environment:
+      FAKE_GOOGLE_HOSTS: *fake-google-hosts
+
+  fake-google:
+    ports:
+      - "127.0.0.1:${FAKE_GOOGLE_BROWSER_PORT:-443}:443"
+    environment:
+      FAKE_GOOGLE_HOSTS: *fake-google-hosts
+
+volumes:
+  certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${FAKE_GOOGLE_CERT_DIR:-/home/ubuntu/.cache/fake-google-certs}
