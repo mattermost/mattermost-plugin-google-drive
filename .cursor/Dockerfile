@@ -51,12 +51,17 @@ RUN arch="$(dpkg --print-architecture)" \
     && node_arch="$([ "$arch" = amd64 ] && echo x64 || echo "$arch")" \
     && mkdir -p /usr/local/node \
     && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${node_arch}.tar.xz" \
-        | tar -C /usr/local/node -xJ --strip-components=1
+        | tar -C /usr/local/node -xJ --strip-components=1 \
+    # Cursor can run the hooks and terminals without the ENV lines below (the Playbooks, core and
+    # Wrangler images do the same), so the tools are also on the default PATH.
+    && for bin in go gofmt; do ln -sf /usr/local/go/bin/$bin /usr/local/bin/$bin; done \
+    && for bin in node npm npx; do ln -sf /usr/local/node/bin/$bin /usr/local/bin/$bin; done
 
 RUN (id ubuntu >/dev/null 2>&1 || useradd -m -s /bin/bash ubuntu) \
     && usermod -aG docker,sudo ubuntu \
     && echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/ubuntu \
-    && chmod 0440 /etc/sudoers.d/ubuntu
+    && chmod 0440 /etc/sudoers.d/ubuntu \
+    && printf '\nexport GOPATH=/home/ubuntu/go\nexport PATH=/usr/local/go/bin:/usr/local/node/bin:/home/ubuntu/go/bin:$PATH\n' >> /home/ubuntu/.bashrc
 
 USER ubuntu
 ENV GOPATH=/home/ubuntu/go

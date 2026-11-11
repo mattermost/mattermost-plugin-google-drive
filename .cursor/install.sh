@@ -6,6 +6,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is not installed, so this agent did not boot from .cursor/Dockerfile." >&2
+    echo "Check the agent's environment: a saved or default environment may have been used instead." >&2
+    exit 1
+fi
+
 image_go="$(GOTOOLCHAIN=local go env GOVERSION)"
 repo_go="go$(go mod edit -json | jq -r .Go)"
 if [[ "$image_go" != "$repo_go" && "$image_go" != "$repo_go".* ]]; then
