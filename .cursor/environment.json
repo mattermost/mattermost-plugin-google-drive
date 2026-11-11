@@ -1,0 +1,22 @@
+{
+  "name": "mattermost-plugin-google-drive",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "user": "ubuntu",
+  "install": ".cursor/install.sh",
+  "start": ".cursor/start.sh",
+  "terminals": [
+    {
+      "name": "mattermost",
+      "command": "make e2e-env-up && .cursor/trust-fake-ca.sh && .cursor/dev-setup.sh && echo 'Mattermost is ready at http://localhost:8065' && cd e2e/playwright && docker compose --profile fake logs -f --tail 0",
+      "description": "Runs Mattermost with the plugin built from this checkout, Postgres, and a fake Google (e2e/playwright/fake-google), then follows their logs. Wait for 'Mattermost is ready'. Open http://localhost:8065 in the browser and log in as sysadmin / Sys@dmin-sample1 (team 'agent'). Google is the fake: connecting an account (`/google-drive connect`) goes through a normal sign-in at accounts.google.com, which is mapped to the fake here; pick one of its accounts and Allow. Use this to reproduce a bug in the browser, change the code, and check the fix. After changing the plugin, run `.cursor/dev-setup.sh` to rebuild and reinstall it (also after `make e2e-env-down && make e2e-env-up`, which wipes all data). Server and plugin logs: `cd e2e/playwright && docker compose logs mattermost`. The Google API calls the plugin made: http://127.0.0.1:8080/__control/requests (contract violations: /__control/violations). Automated tests: `make e2e` from the repo root (they replace the plugin's settings, so run `.cursor/dev-setup.sh --no-build` afterwards); filter with `cd e2e/playwright && npx playwright test specs/<spec>.spec.ts`. See e2e/playwright/README.md for writing tests. There are no real Google credentials: do not run `E2E_GOOGLE=real`, `npm run test:real`, `npm run server:up:real`, `npm run google:auth` or `npm run sweep`. The visual specs (@visual) are not set up here."
+    }
+  ],
+  "ports": [
+    {
+      "name": "Mattermost",
+      "port": 8065
+    }
+  ]
+}
