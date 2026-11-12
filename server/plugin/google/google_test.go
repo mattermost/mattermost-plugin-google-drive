@@ -91,25 +91,48 @@ func TestGetGoogleUserToken(t *testing.T) {
 	})
 }
 
+func serviceBase(t *testing.T, service any) googleServiceBase {
+	t.Helper()
+	switch s := service.(type) {
+	case *DriveService:
+		return s.googleServiceBase
+	case *DriveServiceV2:
+		return s.googleServiceBase
+	case *DocsService:
+		return s.googleServiceBase
+	case *SlidesService:
+		return s.googleServiceBase
+	case *SheetsService:
+		return s.googleServiceBase
+	case *DriveActivityService:
+		return s.googleServiceBase
+	}
+	require.Failf(t, "unexpected service type", "%T", service)
+	return googleServiceBase{}
+}
+
 func TestNewServicesRespectRateLimits(t *testing.T) {
+	ctx := context.Background()
 	for _, test := range []struct {
+		name        string
 		serviceType string
-		create      func(c *Client) error
+		hasLimiter  bool
+		create      func(c *Client) (any, error)
 	}{
-		{driveServiceType, func(c *Client) error { _, err := c.NewDriveService(context.Background(), "user1"); return err }},
-		{driveServiceType, func(c *Client) error { _, err := c.NewDriveV2Service(context.Background(), "user1"); return err }},
-		{docsServiceType, func(c *Client) error { _, err := c.NewDocsService(context.Background(), "user1"); return err }},
-		{slidesServiceType, func(c *Client) error { _, err := c.NewSlidesService(context.Background(), "user1"); return err }},
-		{sheetsServiceType, func(c *Client) error { _, err := c.NewSheetsService(context.Background(), "user1"); return err }},
-		{driveActivityServiceType, func(c *Client) error { _, err := c.NewDriveActivityService(context.Background(), "user1"); return err }},
+		{"drive", driveServiceType, true, func(c *Client) (any, error) { return c.NewDriveService(ctx, "user1") }},
+		{"drive v2", driveServiceType, true, func(c *Client) (any, error) { return c.NewDriveV2Service(ctx, "user1") }},
+		{"docs", docsServiceType, false, func(c *Client) (any, error) { return c.NewDocsService(ctx, "user1") }},
+		{"slides", slidesServiceType, false, func(c *Client) (any, error) { return c.NewSlidesService(ctx, "user1") }},
+		{"sheets", sheetsServiceType, false, func(c *Client) (any, error) { return c.NewSheetsService(ctx, "user1") }},
+		{"drive activity", driveActivityServiceType, false, func(c *Client) (any, error) { return c.NewDriveActivityService(ctx, "user1") }},
 	} {
-		t.Run(test.serviceType, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			t.Run("fails while the user is rate limited", func(t *testing.T) {
 				client, kv, _ := newTestClient(t)
 				kv.EXPECT().GetGoogleUserToken("user1").Return(nil, nil)
 				kv.EXPECT().GetUserRateLimitExceeded(test.serviceType, "user1").Return(true, nil)
 
-				err := test.create(client)
+				_, err := test.create(client)
 
 				require.Error(t, err)
 				assert.Equal(t, "user rate limit exceeded for Google service: "+test.serviceType, err.Error())
@@ -119,7 +142,41 @@ func TestNewServicesRespectRateLimits(t *testing.T) {
 				client, kv, _ := newTestClient(t)
 				kv.EXPECT().GetGoogleUserToken("user1").Return(nil, errors.New("kv failure"))
 
-				assert.Error(t, test.create(client))
+				_, err := test.create(client)
+
+				assert.Error(t, err)
+			})
+
+			t.Run("returns a service when connected and not rate limited", func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				kv := mock_store.NewMockKVStore(ctrl)
+				oauthConfig := mock_oauth2.NewMockConfig(ctrl)
+				client := NewGoogleClient(oauthConfig, &config.Configuration{
+					EncryptionKey:    testEncryptionKey,
+					QueriesPerMinute: 60,
+					BurstSize:        10,
+				}, kv, &plugintest.API{}).(*Client)
+
+				jsonToken, err := json.Marshal(oauth2package.Token{AccessToken: "access", RefreshToken: "refresh"})
+				require.NoError(t, err)
+				encrypted, err := utils.Encrypt([]byte(testEncryptionKey), jsonToken)
+				require.NoError(t, err)
+				kv.EXPECT().GetGoogleUserToken("user1").Return(encrypted, nil)
+				kv.EXPECT().GetUserRateLimitExceeded(test.serviceType, "user1").Return(false, nil)
+				kv.EXPECT().GetProjectRateLimitExceeded(test.serviceType).Return(false, nil)
+				oauthConfig.EXPECT().TokenSource(gomock.Any(), gomock.Any()).Return(oauth2package.StaticTokenSource(&oauth2package.Token{AccessToken: "access"}))
+
+				service, err := test.create(client)
+
+				require.NoError(t, err)
+				base := serviceBase(t, service)
+				assert.Equal(t, test.serviceType, base.serviceType)
+				assert.Equal(t, "user1", base.userID)
+				if test.hasLimiter {
+					assert.Same(t, client.driveLimiter, base.limiter)
+				} else {
+					assert.Nil(t, base.limiter)
+				}
 			})
 		})
 	}

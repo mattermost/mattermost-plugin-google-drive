@@ -25,8 +25,10 @@ func TestEncryptDecrypt(t *testing.T) {
 		encrypted, err := Encrypt(key, plaintext)
 		require.NoError(t, err)
 
-		assert.NotContains(t, string(encrypted), "secret-access")
-		assert.NotContains(t, string(encrypted), "secret-refresh")
+		raw, err := decode(encrypted)
+		require.NoError(t, err)
+		assert.NotContains(t, string(raw), "secret-access")
+		assert.NotContains(t, string(raw), "secret-refresh")
 	})
 
 	t.Run("encrypting the same data twice uses a fresh nonce", func(t *testing.T) {

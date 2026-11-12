@@ -148,7 +148,7 @@ func TestHandleConnect(t *testing.T) {
 	t.Run("returns the OAuth connect link", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		siteURL := "http://localhost:8065"
@@ -163,7 +163,7 @@ func TestHandleConnect(t *testing.T) {
 	t.Run("refuses to connect an already connected account", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return([]byte("encrypted"), nil)
@@ -176,7 +176,7 @@ func TestHandleConnect(t *testing.T) {
 	t.Run("reports a KV store error", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return(nil, errors.New("kv failure"))
@@ -189,7 +189,7 @@ func TestHandleConnect(t *testing.T) {
 	t.Run("reports a missing site URL", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return(nil, nil)
@@ -207,7 +207,7 @@ func TestHandleDisconnect(t *testing.T) {
 	t.Run("deletes the stored token", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return([]byte("encrypted"), nil)
@@ -221,7 +221,7 @@ func TestHandleDisconnect(t *testing.T) {
 	t.Run("reports when no account is connected", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return(nil, nil)
@@ -234,7 +234,7 @@ func TestHandleDisconnect(t *testing.T) {
 	t.Run("reports an error reading the token", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return(nil, errors.New("kv failure"))
@@ -248,7 +248,7 @@ func TestHandleDisconnect(t *testing.T) {
 	t.Run("reports an error deleting the token", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 
 		mocks.MockKVStore.EXPECT().GetGoogleUserToken("userId1").Return([]byte("encrypted"), nil)

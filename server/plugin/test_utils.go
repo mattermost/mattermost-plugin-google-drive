@@ -82,6 +82,15 @@ func GetMockSetup(t *testing.T) *MockSetup {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	return newMockSetup(ctrl)
+}
+
+// GetVerifiedMockSetup keeps the controller live so expectations are checked when the test ends.
+func GetVerifiedMockSetup(t *testing.T) *MockSetup {
+	return newMockSetup(gomock.NewController(t))
+}
+
+func newMockSetup(ctrl *gomock.Controller) *MockSetup {
 	return &MockSetup{
 		MockKVStore:       mock_store.NewMockKVStore(ctrl),
 		MockGoogleClient:  mock_google.NewMockClientInterface(ctrl),

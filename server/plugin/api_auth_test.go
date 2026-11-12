@@ -56,7 +56,7 @@ func TestRoutesRequireAuthentication(t *testing.T) {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
 			te := SetupTestEnvironment(t)
 			defer te.Cleanup(t)
-			mocks := GetMockSetup(t)
+			mocks := GetVerifiedMockSetup(t)
 			te.plugin.KVStore = mocks.MockKVStore
 			te.plugin.GoogleClient = mocks.MockGoogleClient
 			te.plugin.oauthConfig = mocks.MockOAuth2
@@ -174,7 +174,7 @@ func TestWebhookIgnoresNonChangeNotifications(t *testing.T) {
 func TestWebhookRejectsMissingChannelToken(t *testing.T) {
 	te := SetupTestEnvironment(t)
 	defer te.Cleanup(t)
-	mocks := GetMockSetup(t)
+	mocks := GetVerifiedMockSetup(t)
 	te.plugin.KVStore = mocks.MockKVStore
 	te.plugin.GoogleClient = mocks.MockGoogleClient
 	te.plugin.configuration.EncryptionKey = validEncryptionKey
@@ -199,7 +199,7 @@ func TestConnectUserToGoogle(t *testing.T) {
 	t.Run("stores a user-bound state and redirects to Google", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 		te.plugin.oauthConfig = mocks.MockOAuth2
 
@@ -233,7 +233,7 @@ func TestConnectUserToGoogle(t *testing.T) {
 	t.Run("generates a different state for every attempt", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 		te.plugin.oauthConfig = mocks.MockOAuth2
 
@@ -261,7 +261,7 @@ func TestConnectUserToGoogle(t *testing.T) {
 	t.Run("fails when the state cannot be stored", func(t *testing.T) {
 		te := SetupTestEnvironment(t)
 		defer te.Cleanup(t)
-		mocks := GetMockSetup(t)
+		mocks := GetVerifiedMockSetup(t)
 		te.plugin.KVStore = mocks.MockKVStore
 		te.plugin.oauthConfig = mocks.MockOAuth2
 
@@ -338,7 +338,7 @@ func TestCompleteConnectUserToGoogleValidation(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			te := SetupTestEnvironment(t)
 			defer te.Cleanup(t)
-			mocks := GetMockSetup(t)
+			mocks := GetVerifiedMockSetup(t)
 			te.plugin.KVStore = mocks.MockKVStore
 			te.plugin.oauthConfig = mocks.MockOAuth2
 
@@ -372,7 +372,7 @@ func TestCompleteConnectUserToGoogleStoresEncryptedToken(t *testing.T) {
 
 	te := SetupTestEnvironment(t)
 	defer te.Cleanup(t)
-	mocks := GetMockSetup(t)
+	mocks := GetVerifiedMockSetup(t)
 	te.plugin.KVStore = mocks.MockKVStore
 	te.plugin.oauthConfig = mocks.MockOAuth2
 
@@ -458,7 +458,7 @@ func TestCompleteConnectUserToGoogleFailures(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			te := SetupTestEnvironment(t)
 			defer te.Cleanup(t)
-			mocks := GetMockSetup(t)
+			mocks := GetVerifiedMockSetup(t)
 			te.plugin.KVStore = mocks.MockKVStore
 			te.plugin.oauthConfig = mocks.MockOAuth2
 			test.setup(te, mocks)
@@ -599,7 +599,7 @@ func TestHandleCommentReplyDialog(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			te := SetupTestEnvironment(t)
 			defer te.Cleanup(t)
-			mocks := GetMockSetup(t)
+			mocks := GetVerifiedMockSetup(t)
 			te.plugin.GoogleClient = mocks.MockGoogleClient
 			test.setup(te, mocks)
 
